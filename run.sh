@@ -1,0 +1,1 @@
+TOKENIZERS_PARALLELISM=true $PEXEC deeprecon_berts.py --phrases phrases.txt
