@@ -12,29 +12,29 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 import bert_imdb
-# import bert_rotten_tomatoes
-# import bert_ag_news
-# import bert_snli
-# import bert_yelp
-# import roberta_imdb
-# import roberta_rotten_tomatoes
-# import roberta_ag_news
-# import roberta_snli
-# import roberta_yelp
-# import finbert
+import bert_rotten_tomatoes
+import bert_ag_news
+import bert_snli
+import bert_yelp
+import roberta_imdb
+import roberta_rotten_tomatoes
+import roberta_ag_news
+import roberta_snli
+import roberta_yelp
+import finbert
 
 models = [
     bert_imdb,
-    # bert_rotten_tomatoes,
-    # bert_ag_news,
-    # bert_snli,
-    # bert_yelp,
-    # roberta_imdb,
-    # roberta_rotten_tomatoes,
-    # roberta_ag_news,
-    # roberta_snli,
-    # roberta_yelp,
-    # finbert
+    bert_rotten_tomatoes,
+    bert_ag_news,
+    bert_snli,
+    bert_yelp,
+    roberta_imdb,
+    roberta_rotten_tomatoes,
+    roberta_ag_news,
+    roberta_snli,
+    roberta_yelp,
+    finbert
 ]
 
 parser = argparse.ArgumentParser(description='Runs a passed set of phrases on passed models, using DeepRecon to attack the model')
@@ -57,6 +57,11 @@ parser.add_argument("--output_zip",
                     default="output.zip",
                     help="Zip archive to dump the created logs.")
 
+parser.add_argument("--start",
+                    dest="start",
+                    type=int,
+                    default = 0)
+
 args = parser.parse_args()
 print(f"{bcolors.HEADER}Passed: {args}{bcolors.ENDC}")
 
@@ -68,7 +73,7 @@ for p in phrases:
     print(p)
 print(f"{bcolors.ENDC}")
 
-for i in range(0, args.overall_runs):
+for i in range(args.start, args.overall_runs + args.start):
     for m in models:
         start = time.time()
         filename = f"{m.name()}_{i}_.csv"
@@ -77,20 +82,23 @@ for i in range(0, args.overall_runs):
         p0 = subprocess.Popen(extract_command, shell=True)
         print(f"{bcolors.WARNING}Started symbol discovery{bcolors.ENDC}")
 
+
         while not os.path.exists("DR_ACTIVE"):
             time.sleep(0.5)
         print(f"{bcolors.WARNING}Started extraction{bcolors.ENDC}")
 
         t = threading.Thread(target=m.run, name=m.name(), args=(phrases,))
         t.start()
-        print(f"{bcolors.WARNING}Started inference{bcolors.ENDC}")
+        if not os.path.exists("INFERENCE_ACTIVE"):
+            open("INFERENCE_ACTIVE", "w+")
+            print(f"{bcolors.WARNING}Started inference{bcolors.ENDC}")
 
         done = False
         while not done:
             time.sleep(0.5)
-            done = True
-            if p0.poll() is not None and t.isAlive() is True:
-                done = False
+
+            if p0.poll() is not None and t.is_alive() is False:
+                done = True
 
         print(f"{bcolors.OKGREEN}Finished, zipping...{bcolors.ENDC}")
 
@@ -99,6 +107,9 @@ for i in range(0, args.overall_runs):
         while p1.poll() is None:
             time.sleep(0.5)
         
+        if os.path.exists("INFERENCE_ACTIVE"):
+            os.remove("INFERENCE_ACTIVE")
+
         print(f"{bcolors.OKGREEN}Zipped! Total time: {time.time() - start}{bcolors.ENDC}")
 
 print(f"{bcolors.HEADER}Complete!{bcolors.ENDC}")

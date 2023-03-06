@@ -1,1 +1,1 @@
-TOKENIZERS_PARALLELISM=true $PEXEC deeprecon_berts.py --phrases phrases.txt
+TOKENIZERS_PARALLELISM=true $PEXEC deeprecon_berts.py --phrases phrases.txt --overall_runs=150 --start=50
